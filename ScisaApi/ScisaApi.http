@@ -1,0 +1,6 @@
+@ScisaApi_HostAddress = http://localhost:5206
+
+GET {{ScisaApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
