@@ -24,35 +24,53 @@ namespace ScisaApi.Controllers
 
         // GET: api/Categories
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<CategoryDto>>> GetCategories()
+        public async Task<ActionResult<IEnumerable<RetrieveCategory>>> GetCategories()
         {
-            return await _context.Categories.Select(c=> new CategoryDto
+            return await _context.Categories.Select(c=> new RetrieveCategory
             {
                 Id = c.Id,
                 Name = c.Name,
                 Description = c.Description,
-                Products = c.Products,
+                Products = (ICollection<Product>)c.Products.Select(p => new RetrieveCategoryProducts
+                {
+                    Id= p.Id,
+                    Name = p.Name,
+                    Description = p.Description,
+                }),
             }).ToListAsync();
         }
 
         // GET: api/Categories/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Category>> GetCategory(int id)
+        public async Task<ActionResult<RetrieveCategory>> GetCategory(int id)
         {
-            var category = await _context.Categories.FindAsync(id);
+            var category = await _context.Categories.Include(c => c.Products).FirstOrDefaultAsync(c => c.Id == id);
 
             if (category == null)
             {
                 return NotFound();
             }
 
-            return category;
+            var categoryDto = new RetrieveCategory
+            {
+                Id = category.Id,
+                Name = category.Name,
+                Description = category.Description,
+                Products = (ICollection<Product>)category.Products.Select(p => new RetrieveCategoryProducts
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Description = p.Description,
+                }),
+            };
+
+            return categoryDto;
         }
 
         // PUT: api/Categories/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutCategory(int id, Category category)
+        public async Task<IActionResult> PutCategory(int id, CreateCategory categoryDto)
         {
             var categoryEdit = await _context.Categories.FindAsync(id);
 
@@ -61,24 +79,24 @@ namespace ScisaApi.Controllers
                 return NotFound();
             }
 
-            if (categoryEdit.Name != category.Name)
+            if (categoryEdit.Name != categoryDto.Name)
             {
-                var existingCategory = await _context.Categories.AnyAsync(c => c.Name == category.Name);
+                var existingCategory = await _context.Categories.AnyAsync(c => c.Name == categoryDto.Name);
 
                 if (existingCategory)
                 {
                     return Conflict(new { message = "El nombre de la categoría ya existe." });
                 }
 
-                categoryEdit.Name = category.Name;
-                categoryEdit.Description = category.Description;
+                categoryEdit.Name = categoryDto.Name;
+                categoryEdit.Description = categoryDto.Description;
 
                 _context.Entry(categoryEdit).State = EntityState.Modified;
 
             }
             else
             {
-                categoryEdit.Description = category.Description;
+                categoryEdit.Description = categoryDto.Description;
                 _context.Entry(categoryEdit).State = EntityState.Modified;
             }
             
@@ -105,14 +123,16 @@ namespace ScisaApi.Controllers
         // POST: api/Categories
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Category>> PostCategory(Category category)
+        public async Task<ActionResult<Category>> PostCategory(CreateCategory categoryDto)
         {
-            var existingCategory = await _context.Categories.AnyAsync(c => c.Name == category.Name);
+            var existingCategory = await _context.Categories.AnyAsync(c => c.Name == categoryDto.Name);
 
             if (existingCategory)
             {
                 return Conflict(new { message = "El nombre de la categoría ya existe." });
             }
+
+            var category = new Category { Name = categoryDto.Name, Description= categoryDto.Description };
 
 
             _context.Categories.Add(category);
