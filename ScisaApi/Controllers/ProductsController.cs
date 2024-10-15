@@ -24,14 +24,20 @@ namespace ScisaApi.Controllers
 
         // GET: api/Products
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Product>>> GetProducts()
+        public async Task<ActionResult<IEnumerable<RetrieveProduct>>> GetProducts()
         {
-            return await _context.Products.Include(p=>p.Categories).ToListAsync();
+            return await _context.Products.Include(p=>p.Categories).Select(p=>new RetrieveProduct
+            {
+                Id = p.Id,
+                Name = p.Name,
+                Description = p.Description,
+                Categories = p.Categories,
+            }).ToListAsync();
         }
 
         // GET: api/Products/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Product>> GetProduct(int id)
+        public async Task<ActionResult<RetrieveProduct>> GetProduct(int id)
         {
             var product = await _context.Products.Include(p=>p.Categories).FirstOrDefaultAsync(p => p.Id == id);
 
@@ -40,13 +46,21 @@ namespace ScisaApi.Controllers
                 return NotFound();
             }
 
-            return product;
+            var productDto = new RetrieveProduct
+            {
+                Id = product.Id,
+                Name = product.Name,
+                Description = product.Description,
+                Categories = product.Categories,
+            };
+
+            return productDto;
         }
 
         // PUT: api/Products/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutProduct(int id, ProductCreateDto productDto)
+        public async Task<IActionResult> PutProduct(int id, CreateProduct productDto)
         {
             var product = await _context.Products
             .Include(p => p.Categories)
@@ -100,7 +114,7 @@ namespace ScisaApi.Controllers
         // POST: api/Products
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Product>> PostProduct(ProductCreateDto productDto)
+        public async Task<ActionResult<Product>> PostProduct(CreateProduct productDto)
         {
             var categories = await _context.Categories
             .Where(c => productDto.CategoryIds.Contains(c.Id))
