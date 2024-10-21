@@ -1,13 +1,17 @@
 using Microsoft.EntityFrameworkCore;
 using ScisaApi.Data;
+using System.Configuration;
+using TechTalk.SpecFlow.Assist;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
 builder.Services.AddDbContext<DataContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"))
-    );
+                options.UseSqlite("Data Source=Tests.db"));
+// Usar la base de datos real
+//builder.Services.AddDbContext<DataContext>(options =>
+//    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection"))
+//    );
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

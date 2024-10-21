@@ -31,7 +31,7 @@ namespace ScisaApi.Controllers
                 Id = c.Id,
                 Name = c.Name,
                 Description = c.Description,
-                Products = (ICollection<Product>)c.Products.Select(p => new RetrieveCategoryProducts
+                Products = (List<RetrieveCategoryProducts>)c.Products.Select(p => new RetrieveCategoryProducts
                 {
                     Id= p.Id,
                     Name = p.Name,
@@ -44,27 +44,25 @@ namespace ScisaApi.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<RetrieveCategory>> GetCategory(int id)
         {
-            var category = await _context.Categories.Include(c => c.Products).FirstOrDefaultAsync(c => c.Id == id);
+            var category = await _context.Categories.Select(c => new RetrieveCategory
+            {
+                Id = c.Id,
+                Name = c.Name,
+                Description = c.Description,
+                Products = (List<RetrieveCategoryProducts>)c.Products.Select(p => new RetrieveCategoryProducts
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Description = p.Description,
+                }),
+            }).FirstOrDefaultAsync(c => c.Id == id);
 
             if (category == null)
             {
                 return NotFound();
             }
 
-            var categoryDto = new RetrieveCategory
-            {
-                Id = category.Id,
-                Name = category.Name,
-                Description = category.Description,
-                Products = (ICollection<Product>)category.Products.Select(p => new RetrieveCategoryProducts
-                {
-                    Id = p.Id,
-                    Name = p.Name,
-                    Description = p.Description,
-                }),
-            };
-
-            return categoryDto;
+            return category;
         }
 
         // PUT: api/Categories/5
